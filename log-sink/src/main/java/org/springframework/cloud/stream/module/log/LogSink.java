@@ -21,8 +21,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.annotation.Transformer;
 import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.integration.transformer.ExpressionEvaluatingTransformer;
 
 /**
  * @author Dave Syer
@@ -37,7 +41,14 @@ public class LogSink {
 	private LogSinkProperties properties;
 
 	@Bean
-	@ServiceActivator(inputChannel=Sink.INPUT)
+	@Transformer(inputChannel=Sink.INPUT, outputChannel="next")
+	public org.springframework.integration.transformer.Transformer transformer() {
+		Expression expression = new SpelExpressionParser().parseExpression("payload.id.toString()");
+		return new ExpressionEvaluatingTransformer(expression);
+	}
+
+	@Bean
+	@ServiceActivator(inputChannel="next")
 	public LoggingHandler logSinkHandler() {
 		LoggingHandler loggingHandler = new LoggingHandler(this.properties.getLevel());
 		loggingHandler.setExpression(this.properties.getExpression());
