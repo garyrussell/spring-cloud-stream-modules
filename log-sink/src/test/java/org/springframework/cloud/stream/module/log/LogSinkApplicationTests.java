@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.module.log;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.Properties;
@@ -35,6 +36,8 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.modules.test.PropertiesInitializer;
+import org.springframework.cloud.stream.tuple.Tuple;
+import org.springframework.cloud.stream.tuple.TupleBuilder;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.support.GenericMessage;
@@ -74,15 +77,21 @@ public class LogSinkApplicationTests {
 		assertEquals("foo", TestUtils.getPropertyValue(logger, "name"));
 		logger = spy(logger);
 		new DirectFieldAccessor(this.logSinkHandler).setPropertyValue("messageLogger", logger);
-		GenericMessage<String> message = new GenericMessage<>("{ \"id\" : \"foo\" }");
+		String json = "{ \"id\" : \"foo\", \"bar\" : \"baz\"  }";
+		GenericMessage<String> message = new GenericMessage<>(json);
 		this.sink.input().send(message);
 		ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 		verify(logger).warn(captor.capture());
-		assertEquals("FOO", captor.getValue());
-		this.logSinkHandler.setExpression("#this");
+		assertEquals("BAZ", captor.getValue());
+//		this.logSinkHandler.setExpression("#this");
 //		this.sink.input().send(message);
 //		verify(logger, times(2)).warn(captor.capture());
 //		assertSame(message, captor.getValue());
+
+		Tuple tuple = TupleBuilder.fromString(json);
+		this.sink.input().send(new GenericMessage<>(tuple));
+		verify(logger, times(2)).warn(captor.capture());
+		assertEquals("BAZ", captor.getValue());
 	}
 
 }

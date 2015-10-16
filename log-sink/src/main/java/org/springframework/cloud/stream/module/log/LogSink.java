@@ -43,7 +43,7 @@ public class LogSink {
 	@Bean
 	@Transformer(inputChannel=Sink.INPUT, outputChannel="next")
 	public org.springframework.integration.transformer.Transformer transformer() {
-		Expression expression = new SpelExpressionParser().parseExpression("payload.id.toString()");
+		Expression expression = new SpelExpressionParser().parseExpression("payload.bar.toString()");
 		return new ExpressionEvaluatingTransformer(expression);
 	}
 
