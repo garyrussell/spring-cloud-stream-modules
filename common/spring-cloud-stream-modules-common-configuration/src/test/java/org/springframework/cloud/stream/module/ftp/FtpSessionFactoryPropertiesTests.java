@@ -18,9 +18,10 @@ package org.springframework.cloud.stream.module.ftp;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.fail;
+import static org.springframework.cloud.stream.modules.test.hamcrest.HamcrestHelpers.withNonEmptyArgument;
 
 import org.junit.Assume;
 import org.junit.Test;
@@ -30,7 +31,6 @@ import org.springframework.boot.test.EnvironmentTestUtils;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.BindException;
-import org.springframework.validation.FieldError;
 
 /**
  * @author David Turanski
@@ -100,9 +100,7 @@ public class FtpSessionFactoryPropertiesTests {
 		catch (Exception e) {
 			assertThat(e.getCause(), instanceOf(BindException.class));
 			BindException bindException = (BindException) e.getCause();
-			FieldError fieldError = (FieldError) bindException.getAllErrors().get(0);
-			assertThat(fieldError.getArguments()[0].toString(), containsString("username"));
-			assertThat(fieldError.getDefaultMessage(), equalTo("may not be empty"));
+			assertThat(bindException.getAllErrors(), hasItem(withNonEmptyArgument("username")));
 		}
 	}
 
