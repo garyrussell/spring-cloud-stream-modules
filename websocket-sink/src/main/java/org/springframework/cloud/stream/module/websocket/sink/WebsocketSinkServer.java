@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-15 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import io.netty.handler.logging.LoggingHandler;
  * from {@link WebsocketSinkProperties#websocketLoglevel}.
  *
  * @author Oliver Moser
+ * @author Gary Russell
  */
 public class WebsocketSinkServer {
 
@@ -60,6 +61,12 @@ public class WebsocketSinkServer {
 
 	private EventLoopGroup workerGroup;
 
+	private int port;
+
+	public int getPort() {
+		return this.port;
+	}
+
 	@PostConstruct
 	public void init() {
 		bossGroup = new NioEventLoopGroup(properties.getThreads());
@@ -73,14 +80,14 @@ public class WebsocketSinkServer {
 	}
 
 	public void run() throws InterruptedException {
-		new ServerBootstrap().group(bossGroup, workerGroup)
+		NioServerSocketChannel channel = (NioServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
 			.channel(NioServerSocketChannel.class)
 			.handler(new LoggingHandler(nettyLogLevel()))
 			.childHandler(initializer)
 			.bind(properties.getWebsocketPort())
 			.sync()
 			.channel();
-
+		this.port = channel.localAddress().getPort();
 		dumpProperties();
 	}
 
@@ -88,11 +95,11 @@ public class WebsocketSinkServer {
 		logger.info("███████████████████████████████████████████████████████████");
 		logger.info("                >> websocket-sink config <<                ");
 		logger.info("");
-		logger.info(String.format("websocketPort:     %s", properties.getWebsocketPort()));
-		logger.info(String.format("ssl:               %s", properties.isSsl()));
-		logger.info(String.format("websocketPath:     %s", properties.getWebsocketPath()));
-		logger.info(String.format("websocketLoglevel: %s", properties.getWebsocketLoglevel()));
-		logger.info(String.format("threads:           %s", properties.getThreads()));
+		logger.info(String.format("websocketPort:     %s", this.port));
+		logger.info(String.format("ssl:               %s", this.properties.isSsl()));
+		logger.info(String.format("websocketPath:     %s", this.properties.getWebsocketPath()));
+		logger.info(String.format("websocketLoglevel: %s", this.properties.getWebsocketLoglevel()));
+		logger.info(String.format("threads:           %s", this.properties.getThreads()));
 		logger.info("");
 		logger.info("████████████████████████████████████████████████████████████");
 	}
